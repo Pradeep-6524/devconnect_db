@@ -8,6 +8,7 @@ import com.devconnect.service.UserService;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,19 +18,23 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-    public UserServiceImpl(UserRepository userRespository)
+    public UserServiceImpl(UserRepository userRespository,PasswordEncoder passwordEncoder)
     {
         this.userRepository = userRespository;
+        this.passwordEncoder = passwordEncoder;
     }
 
 
     @Override
     public UserResponse registerUser(UserRequest userRequest) {
+        String encodedPassword = passwordEncoder.encode(userRequest.getPassword());
         User user = User.builder()
                 .username(userRequest.getUsername())
                 .email(userRequest.getEmail())
-                .password(userRequest.getPassword())
+                .password(encodedPassword)
                 .build();
 
         User savedUser = userRepository.save(user);
@@ -37,7 +42,6 @@ public class UserServiceImpl implements UserService {
         return UserResponse.builder()
                 .id(savedUser.getId())
                 .email(savedUser.getEmail())
-                .password(savedUser.getPassword())
                 .build();
     }
 
@@ -65,4 +69,6 @@ public class UserServiceImpl implements UserService {
     public List<User> getUsersByEmailDomain(String domain) {
         return userRepository.findByEmailEndingWith(domain);
     }
+
+
 }
